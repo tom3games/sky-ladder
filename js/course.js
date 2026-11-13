@@ -237,7 +237,35 @@ export function buildCourse() {
   for (const [x0, z0] of [[-4, 20.9], [20.9, 2], [0, -24.3], [-24.3, -6]]) {
     B.boxes.push({ min: [x0, 0, z0], max: [x0 + 3.4, 5, z0 + 3.4], mat: 'yagura', noLadder: true, yagura: true, face: null })
   }
+  // 区間ごとの手がかり: 掛けられる場所（光らせる所）と、立つ所。tip は新しい使い方が初めて出る区間の一言
+  const H = (sec, f, u, w, y, n, su, sw, tip) => { const k0 = K; K = SEC_K[sec]; const [x, z] = fx(f, u, w), [sx, sz] = fx(f, su, sw); K = k0; return { sec, p: [x, y, z], n, stand: [sx, sz], tip } }
+  const hints = [
+    H(1, 0, 2, 2, 3.08, [-1, 0, 0], 0.6, 2, ['縁ぎりぎりに掛けると、立つ', 'Aim near the top edge to stand it up']),
+    H(2, 1, -1, 2, 6.57, [0, 0, 1], -2.2, 2, ['苔は滑る。立て気味に', 'Moss is slippery. Stand it steeper']),
+    H(3, 1, 7.6, 2, 6.6, [0, 1, 0], 3.5, 2, ['はしごを寝かせると、橋になる', 'Lay the ladder down to make a bridge']),
+    H(4, 2, -9, 5.6, 10.1, [0, 0, -1], -9, 3.2, ['張り出しの縁には、引っ掛けられる', 'You can hook it on the overhang edge']),
+    H(5, 3, -7, 2, 13.97, [0, 0, -1], -7, 3.2, ['足場が近づいた時に、立てて登る', 'Place it when the deck swings close']),
+    H(6, 3, 4, 2, 17.68, [0, 0, -1], 2.4, 2, ['崩れる前に、登りきる', 'Climb before it crumbles']),
+    H(7, 0, -2, 1, 21.48, [-1, 0, 0], -3.6, 1, ['風が止んだら、登る', 'Climb between gusts']),
+    H(8, 1, -0.05, 1.3, 21.6, [0, 1, 0], -3.3, 1.3, ['天井が低い。寝かせて渡す', 'Low ceiling. Lay it across']),
+    H(9, 1, 5, 2.45, 25.5, [0, 0, 1], 3.4, 2.45, ['はしごの上からも、跳べる', 'You can jump from the top of the ladder']),
+    H(10, 2, -6, 5, 28.78, [1, 0, 0], -7.3, 5, ['上った先で、次に立てる場所が要る', 'Leave room to place it again up there']),
+    H(11, 2, -1, 6, 36.2, [1, 0, 0], -2.5, 6, ['枝は丸い。引っ掛けるだけ', 'Branches are round. Hook them']),
+    H(12, 3, 2, 2, 42.6, [0, 0, -1], 0.9, 2, ['動く梁に掛けると、持ち上げてもらえる', 'Hook the moving beam and ride it up']),
+    H(13, 0, -4, 2, 50.78, [-1, 0, 0], -6, 2, ['祠のはしごは、長さを変えられる', 'The shrine ladder can change length']),
+    H(14, 0, 1, 2, 54.51, [-1, 0, 0], 0, 2, ['葉の無い所に、足を置く', 'Put the feet where there are no leaves']),
+    H(15, 1, -3, 0.9, 60.2, [0, 0, 1], -4.6, 0.9, null),
+    H(16, 1, 7, 2, 64.04, [0, 0, 1], 4, 2, null),
+    H(17, 2, -3.15, 2, 64.1, [0, 1, 0], -7.4, 2, ['細い梁の橋は、渡る間に横へ体重をかける', 'On a thin beam, lean to keep it upright']),
+    H(18, 2, 5.5, 2, 67.64, [1, 0, 0], 4.3, 2, null),
+    H(19, 3, 3, 1.8, 71.55, [0, 0, -1], 1.4, 1.8, ['穴を抜けるには、長さと角度', 'Length and angle to get through the hole']),
+    H(20, 0, -7, 2, 75.2, [-1, 0, 0], -8.8, 2, ['苔の上なら、梁に引っ掛ける', 'On moss, hook the beam instead']),
+    H(21, 0, 1, 3.1, 79.4, [-1, 0, 0], -0.6, 3.1, null),
+    H(22, 1, -9, 0.7, 82.5, [0, 0, 1], -10.3, 0.7, null),
+    H(23, 1, 3, 0.8, 92.05, [0, 0, 1], 0.6, 0.8, null),
+  ]
   return {
+    hints,
     boxes: B.boxes, flags: B.flags, winds: B.winds, L0: 4.2,
     pickups: [{ p: [px, y12, pz], kind: 'tele' }],
     goal: { p: [gx, y23, gz], r: 1.6 },

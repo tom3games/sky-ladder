@@ -38,7 +38,8 @@ function checkPen() {
   if (pl.mode === 'ground' && g && g.y - pl.p[1] > pen.max) { pen.max = g.y - pl.p[1]; pen.at = [pl.p.map(v => +v.toFixed(2)), 'floor', g.box.sec, pl.mode] }
 }
 const _step = Sim.prototype.step
-Sim.prototype.step = function (inp) { _step.call(this, inp); if (this === sim) checkPen() }
+const TRACE = process.env.TRACE ? [] : null
+Sim.prototype.step = function (inp) { _step.call(this, inp); if (this === sim) { checkPen(); if (TRACE) TRACE.push([+this.pl.p[0].toFixed(3), +this.pl.p[1].toFixed(3), +this.pl.p[2].toFixed(3), this.pl.mode, this.lad.d ? [+this.lad.d[0].toFixed(3), +this.lad.d[2].toFixed(3)] : null, this.tick]) } }
 function stepN(n, inp = {}) { for (let i = 0; i < n; i++) sim.step({ mv: [0, 0], ...inp }) }
 function until(fn, max, inp = {}) {
   for (let i = 0; i < max * 60; i++) { if (fn()) return true; sim.step({ mv: [0, 0], ...(typeof inp === 'function' ? inp() : inp) }) }
@@ -345,5 +346,6 @@ else {
 console.log('区間  時間(秒)  高さ  落下')
 for (const r of log) console.log(String(r.n).padStart(3), String(r.t).padStart(8), String(r.y).padStart(6), String(r.falls).padStart(4))
 console.log('合計', sim.timeT.toFixed(1), '秒  頂上:', sim.done, ' 置いた回数', sim.stats.placed)
+if (TRACE) (await import('node:fs')).writeFileSync(process.env.TRACE, JSON.stringify(TRACE))
 console.log('めり込み 最大', (pen.max * 100).toFixed(1), 'cm', JSON.stringify(pen.at), '刻み', pen.n)
 if (fails.length) console.log('失敗:\n  ' + fails.join('\n  '))

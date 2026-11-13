@@ -1,6 +1,6 @@
 // SKY LADDER の物理（固定60Hz・描画とは独立）。人とはしごだけ。
 // はしごは立てかけた面の中で倒れ（後ろへ）・滑り（足元が外へ）・横揺れする。
-import { World } from './world.js?v=5'
+import { World } from './world.js?v=6'
 
 export const DT = 1 / 60
 export const G = 20
@@ -51,7 +51,8 @@ export function plan(world, pl, hit, L) {
     p2 = hit.p.slice(); p2[1] = b.max[1]
     if (Math.abs(n[1]) < 0.5) { const ax = Math.abs(n[0]) > 0.5 ? 0 : 2; p2[ax] -= n[ax] * 0.02 }
     n2 = [0, 1, 0]
-  } else if (Math.abs(n[1]) < 0.5 && b.max[1] - hit.p[1] < 0.3 && !b.core) {
+  } else if (Math.abs(n[1]) < 0.5 && (b.max[1] - hit.p[1] < 0.3 || b.max[1] - feet[1] < 1.0) && !b.core) {
+    // 壁の縁のすぐ下を押した・向こうの足場が足と同じくらいの高さ（橋）
     const ax = Math.abs(n[0]) > 0.5 ? 0 : 2
     p2 = hit.p.slice(); p2[1] = b.max[1]; p2[ax] -= n[ax] * 0.3
     n2 = [0, 1, 0]
@@ -171,7 +172,17 @@ export function plan(world, pl, hit, L) {
     if (Math.abs(F[1] - feet[1]) > 0.62) return { ...res, ok: false, why: 'nofloor' }
   }
   const hd = Math.hypot(F[0] - feet[0], F[2] - feet[2])
-  if (hd > (res.type === 'hook' && res.dangle ? 3.4 : 3.3)) return { ...res, ok: false, why: 'far' }
+  if (hd > (res.type === 'hook' && res.dangle ? 3.4 : 3.3)) {
+    // 少し遠くても、足元まで同じ高さの床が続いていれば、歩いて行って掛ける（7m まで）
+    let walk = hd <= 7 && !(res.type === 'hook' && res.dangle)
+    for (let k = 1; walk && k <= Math.ceil(hd / 0.25); k++) {
+      const f = k / Math.ceil(hd / 0.25), x = feet[0] + (F[0] - feet[0]) * f, z = feet[2] + (F[2] - feet[2]) * f
+      const g = world.groundAt(x, z, feet[1] + 0.45, 0.1)
+      if (!g || Math.abs(g.y - feet[1]) > 0.45 || world.pointIn([x, feet[1] + 0.9, z], 0.05)) walk = false
+    }
+    if (!walk) return { ...res, ok: false, why: 'far' }
+    res.walk = hd
+  }
   const tmp = { ...res, L, dth: 0 }
   const pose = ladderPose(tmp)
   const trim = res.type === 'bridge' ? [0.25, 0.25] : res.type === 'rest' ? [0.25, Math.max(0.05, L - res.c - 0.15)] : [0.25, 0.3]
@@ -289,7 +300,8 @@ export class Sim {
     // 足元へ寄って、つかまる
     const tgt = q.F.slice()
     if (q.type !== 'bridge') { tgt[0] -= q.d[0] * 0.05; tgt[2] -= q.d[2] * 0.05 }
-    pl.tw = { from: pl.p.slice(), to: tgt, t: 0, dur: Math.min(0.24, 0.08 + hlen(sub(tgt, pl.p)) * 0.06), then: q.type === 'bridge' ? 'beam' : 'ladder' }
+    const wd = hlen(sub(tgt, pl.p))
+    pl.tw = { from: pl.p.slice(), to: tgt, t: 0, dur: wd > 3.3 ? wd / 6 : Math.min(0.24, 0.08 + wd * 0.06), then: q.type === 'bridge' ? 'beam' : 'ladder' }
     pl.mode = 'auto'
     pl.v = [0, 0, 0]
     return true

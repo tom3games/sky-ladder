@@ -7,8 +7,8 @@ import { RenderPass } from '../vendor/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from '../vendor/jsm/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from '../vendor/jsm/postprocessing/ShaderPass.js'
 import { OutputPass } from '../vendor/jsm/postprocessing/OutputPass.js'
-import { ladderPose } from './sim.js?v=5'
-import { buildCastle } from './castle.js?v=5'
+import { ladderPose } from './sim.js?v=6'
+import { buildCastle } from './castle.js?v=6'
 
 // 絵 C から抜いた色（k-means と場所ごとの平均。2026-11-13）
 export const PAL = {
@@ -255,6 +255,19 @@ export class View {
     // はしご
     this.ladder = this.makeLadder(0xffffff, 1)
     sc.add(this.ladder)
+    // 手がかり: 掛けられる縁がうっすら光る・最初の1回だけ見本のはしご
+    {
+      const c = document.createElement('canvas'); c.width = 128; c.height = 64
+      const x = c.getContext('2d'), g = x.createRadialGradient(64, 32, 2, 64, 32, 60)
+      g.addColorStop(0, 'rgba(255,220,140,1)'); g.addColorStop(0.5, 'rgba(255,190,90,0.45)'); g.addColorStop(1, 'rgba(255,170,60,0)')
+      x.fillStyle = g; x.fillRect(0, 0, 128, 64)
+      const t = new THREE.CanvasTexture(c)
+      this.hintGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), new THREE.MeshBasicMaterial({ map: t, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide }))
+      this.hintGlow.userData.soft = true; this.hintGlow.visible = false; this.hintGlow.renderOrder = 5
+      sc.add(this.hintGlow)
+      this.demo = this.makeLadder(0xffd27a, 0.32); this.demo.visible = false; this.demo.userData.soft = true
+      sc.add(this.demo)
+    }
     this.ghost = this.makeLadder(0x8ee09a, 0.42)
     this.ghost.visible = false
     sc.add(this.ghost)
@@ -673,22 +686,8 @@ export class View {
       this.fall.setMatrixAt(i, o.matrix)
     }
     this.fall.instanceMatrix.needsUpdate = true
-    // カメラ: 人の後ろ上。はしごの上では少し横へ（角度が見える）
-    const tgt = new THREE.Vector3(pl.p[0], pl.p[1] + 1.45, pl.p[2])
-    this.camT.lerp(tgt, 1 - Math.exp(-dt * 8))
-    const idle = t - this.userCamT > 2.5
-    if (idle && pl.mode === 'ladder' && lad.d) {
-      // 斜め上から石垣と はしごを見下ろす（絵 C の構図）
-      const ly = Math.atan2(-lad.d[0], -lad.d[2]) + 0.6
-      this.camYaw += angDiff(this.camYaw, ly) * (1 - Math.exp(-dt * 1.5))
-      this.camPitch += (0.62 - this.camPitch) * (1 - Math.exp(-dt * 1.2))
-    }
-    const cp = Math.cos(this.camPitch), sp = Math.sin(this.camPitch)
-    const off = new THREE.Vector3(Math.sin(this.camYaw) * cp, sp, Math.cos(this.camYaw) * cp)
-    const hit = W.raycast([this.camT.x, this.camT.y, this.camT.z], [off.x, off.y, off.z], this.camDist, b => b.mat === 'leaves' || b.mat === 'moss')
-    const dd = hit ? Math.max(1.2, hit.t - 0.3) : this.camDist
-    this.cam.position.copy(this.camT).addScaledVector(off, dd)
-    this.cam.lookAt(this.camT)
+    this.updateCam(dt, t)
+    if (this.hintGlow.visible) this.hintGlow.material.opacity = 0.45 + 0.35 * Math.sin(t * 3)
     this.sun.position.set(pl.p[0] + SUN_DIR.x * 50, pl.p[1] + SUN_DIR.y * 50, pl.p[2] + SUN_DIR.z * 50)
     this.sun.target.position.set(pl.p[0], pl.p[1], pl.p[2])
     this.sky.position.copy(this.cam.position)
@@ -696,6 +695,85 @@ export class View {
     this.cam.updateMatrixWorld(); this.cam.matrixWorldInverse.copy(this.cam.matrixWorld).invert()
     if (this.sunV) this.sunV.value.copy(SUN_DIR).transformDirection(this.cam.matrixWorldInverse)
     this.composer.render(dt)
+  }
+  // カメラ: 人の後ろ上。はしごの上では斜め上・少し横から（角度が見える）
+  // 壁で寄る時も一気に寄らない（寄るのは速く、戻るのはゆっくり）。木・塀・旗・動く物では寄らない
+  updateCam(dt, t = performance.now() / 1000) {
+    const sim = this.sim, pl = sim.pl, lad = sim.lad, W = sim.world
+    const tgt = new THREE.Vector3(pl.p[0], pl.p[1] + 1.45, pl.p[2])
+    this.camT.lerp(tgt, 1 - Math.exp(-dt * 8))
+    const idle = t - this.userCamT > 2.5
+    const o = [this.camT.x, this.camT.y, this.camT.z]
+    const small = b => b.mat === 'leaves' || b.mat === 'moss' || b.mat === 'wet' || b.mat === 'bark' || b.mat === 'branch' || b.mat === 'fence' || b.mat === 'gate' || b.mat === 'sway' || b.tree2 || b.tree || (b.max[1] - b.min[1] < 0.1)
+    const free = (yaw, pitch) => { const c = Math.cos(pitch); const h = W.raycast(o, [Math.sin(yaw) * c, Math.sin(pitch), Math.cos(yaw) * c], this.camDist + 0.4, small); return h ? h.t : 99 }
+    if (idle && pl.mode === 'ladder' && lad.d) {
+      // はしごの横のどちら側から見るかは、石垣や建物に遮られない方（切り替えは 0.6秒に1回まで）
+      const base = Math.atan2(-lad.d[0], -lad.d[2])
+      this.sideT = (this.sideT || 0) - dt
+      if (this.sideT <= 0 || this.side == null) {
+        const a = free(base + 0.6, 0.62), b2 = free(base - 0.6, 0.62)
+        const want2 = a >= b2 - 0.5 ? 1 : -1
+        if (this.side == null || (want2 !== this.side && Math.abs(a - b2) > 1)) this.side = want2
+        this.sideT = 0.6
+      }
+      const ly = base + 0.6 * this.side
+      this.camYaw += angDiff(this.camYaw, ly) * (1 - Math.exp(-dt * 1.5))
+      this.camPitch += (0.62 - this.camPitch) * (1 - Math.exp(-dt * 1.2))
+    } else if (pl.mode !== 'ladder') this.side = null
+    // 低い天井の下では、カメラを低く（天井に当たらない角度へ）
+    let pitch = this.camPitch
+    if (!this.camOld) {
+      const up = W.raycast(o, [0, 1, 0], 2.2, small)
+      const pTarget = up ? Math.min(this.camPitch, 0.08) : this.camPitch
+      this.pitchUse = this.pitchUse == null ? pTarget : this.pitchUse + (pTarget - this.pitchUse) * (1 - Math.exp(-dt * 4))
+      pitch = this.pitchUse
+    }
+    const cp = Math.cos(pitch), sp = Math.sin(pitch)
+    const off = new THREE.Vector3(Math.sin(this.camYaw) * cp, sp, Math.cos(this.camYaw) * cp)
+    let want
+    if (this.camOld) {
+      const hit = W.raycast(o, [off.x, off.y, off.z], this.camDist, b => b.mat === 'leaves' || b.mat === 'moss')
+      want = hit ? Math.max(1.2, hit.t - 0.3) : this.camDist
+      this.camCur = want
+    } else {
+      // 太い光線（真ん中と上下左右 0.5m）で早めに気づき、なめらかに寄せ始める
+      const sideV = new THREE.Vector3(Math.cos(this.camYaw), 0, -Math.sin(this.camYaw)), upV = new THREE.Vector3().crossVectors(off, sideV).normalize()
+      let tmin = 99
+      for (const [a1, a2] of [[0, 0], [0.5, 0], [-0.5, 0], [0, 0.5], [0, -0.5]]) {
+        const tip = off.clone().multiplyScalar(this.camDist).addScaledVector(sideV, a1).addScaledVector(upV, a2)
+        const L = tip.length(), dir = tip.divideScalar(L)
+        const h = W.raycast(o, [dir.x, dir.y, dir.z], L + 0.4, small)
+        if (h) tmin = Math.min(tmin, h.t * (a1 || a2 ? dir.dot(off) : 1))
+      }
+      want = tmin < 99 ? Math.max(1.4, tmin - 0.45) : this.camDist
+      if (this.camCur == null) this.camCur = want
+      const d = want - this.camCur
+      // 寄る: 毎秒 9m まで（0.1秒で約1m）。戻る: 毎秒 2.5m まで
+      this.camCur += d < 0 ? Math.max(d, -14 * dt) : Math.min(d, 2.5 * dt)
+      // カメラが石垣や建物の中に入る時だけは、入らない所まで寄せる（中は真っ暗になる）
+      const c = [o[0] + off.x * this.camCur, o[1] + off.y * this.camCur, o[2] + off.z * this.camCur]
+      if (W.pointIn(c, -0.08, small)) {
+        let k = this.camCur
+        while (k > want && W.pointIn([o[0] + off.x * k, o[1] + off.y * k, o[2] + off.z * k], -0.08, small)) k -= 0.05
+        this.camCur = Math.max(want, k)
+      }
+    }
+    this.cam.position.copy(this.camT).addScaledVector(off, this.camCur)
+    this.cam.lookAt(this.camT)
+    return this.camCur
+  }
+  setHint(h) {
+    this.hint = h
+    if (!h) { this.hintGlow.visible = false; return }
+    const n = new THREE.Vector3(...h.n)
+    this.hintGlow.position.set(h.p[0] + h.n[0] * 0.04, h.p[1] + h.n[1] * 0.04, h.p[2] + h.n[2] * 0.04)
+    this.hintGlow.lookAt(this.hintGlow.position.clone().add(n))
+    this.hintGlow.visible = true
+  }
+  setDemo(pose, L) {
+    if (!pose) { this.demo.visible = false; return }
+    this.poseLadder(this.demo, pose.F, pose.u, 0, L)
+    this.demo.visible = true
   }
   camFwd() { return [-Math.sin(this.camYaw), -Math.cos(this.camYaw)] }
 }

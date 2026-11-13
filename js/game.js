@@ -1,7 +1,7 @@
 // 入口: 固定60Hzの物理・入力・画面の部品
-import { Sim, plan, DT } from './sim.js?v=5'
-import { buildCourse } from './course.js?v=5'
-import { View } from './view.js?v=5'
+import { Sim, plan, DT } from './sim.js?v=6'
+import { buildCourse } from './course.js?v=6'
+import { View } from './view.js?v=6'
 
 const $ = id => document.getElementById(id)
 const course = buildCourse()
@@ -127,7 +127,7 @@ const up = e => {
 }
 cv.addEventListener('pointerup', up)
 cv.addEventListener('pointercancel', up)
-cv.addEventListener('wheel', e => { view.camDist = clamp(view.camDist + e.deltaY * 0.01, 3.5, 15); e.preventDefault() }, { passive: false })
+cv.addEventListener('wheel', e => { const d = e.deltaY * (e.deltaMode === 1 ? 0.3 : 0.01); view.camDist = clamp(view.camDist + clamp(d, -0.5, 0.5), 3.5, 15); e.preventDefault() }, { passive: false })
 // 長押しで影を出す
 setInterval(() => {
   for (const p of pts.values()) if (p.mode === 'pend' && performance.now() - p.t > 220 && canAim()) { const q = aimAt(p.x, p.y); if (q) { p.mode = 'aim'; ghost = q } }
@@ -253,7 +253,8 @@ function onEvents() {
     if (e.t === 'land') snd('step', { vol: Math.min(1, 0.4 + (e.h || 0) * 0.08), rate: 0.8 })
     if (e.t === 'goal') snd('bell', { vol: 0.9 })
     if (e.t === 'place' || e.t === 'mantle' || e.t === 'take') tutor(e.t)
-    if (e.t === 'flag') { const f = course.flags[e.i], sc = course.sections.find(x => x.id === f.sec); toast(sc ? `${f.sec}. ${lang === 'ja' ? sc.name : sc.en}` : T.flag, 2200) }
+    if (e.t === 'flag') { const f = course.flags[e.i], sc = course.sections.find(x => x.id === f.sec); if (!enterSection(f.sec)) toast(sc ? `${f.sec}. ${lang === 'ja' ? sc.name : sc.en}` : T.flag, 2200) }
+    if (e.t === 'place') { hintUntil = 0; view.setHint(null); view.setDemo(null); lastActive = performance.now() }
     if (e.t === 'ladfall' && sim.pl.mode === 'air') toast(T[e.why === 'slipoff' ? 'slip' : e.why] || '')
     if (e.t === 'crumble') toast(T.crumble)
     if (e.t === 'land' && e.h > 3) toast(`${e.h.toFixed(1)}${T.fall}`)
@@ -261,6 +262,42 @@ function onEvents() {
     if (e.t === 'pickup') toast(lang === 'ja' ? (touch ? '伸びるはしご　右のボタンで長さを変える' : '伸びるはしご　F で伸ばす・Q で縮める') : (touch ? 'Extending ladder: use the buttons' : 'Extending ladder: F longer, Q shorter'), 3200)
     if (e.t === 'goal') { $('goal').hidden = false; $('goalT').textContent = $('tm').textContent }
   }
+}
+
+// ===== 手がかり（新しい使い方が初めて出る区間の一言・掛けられる縁が光る・止まっていたら光る） =====
+let shownTips = new Set()
+try { shownTips = new Set(JSON.parse(localStorage.getItem('sl_tips') || '[]')) } catch {}
+let hintUntil = 0, demoUntil = 0, lastActive = performance.now(), lastPos = null
+const hintOf = sec => course.hints.find(h => h.sec === sec)
+function enterSection(sec) {
+  const h = hintOf(sec)
+  if (!h || !h.tip || shownTips.has(sec)) return false
+  shownTips.add(sec); try { localStorage.setItem('sl_tips', JSON.stringify([...shownTips])) } catch {}
+  toast(h.tip[lang === 'ja' ? 0 : 1], 4200)
+  // 最初の1回: 掛けられる縁を光らせ、見本のはしごを見せる
+  view.setHint(h); hintUntil = performance.now() + 9000
+  // 見本のはしごは、橋が初めて出る区間3だけ（ほかは一言と光る縁まで。答えは言いすぎない）
+  const g = sec === 3 ? sim.world.groundAt(h.stand[0], h.stand[1], h.n[1] > 0.5 ? h.p[1] + 0.3 : h.p[1] - 0.5, 0.2) : null
+  if (g) {
+    const o = [h.p[0] + h.n[0] * 0.4, h.p[1] + h.n[1] * 0.4, h.p[2] + h.n[2] * 0.4]
+    const hit = sim.world.raycast(o, [-h.n[0], -h.n[1], -h.n[2]], 2)
+    const q = plan(sim.world, { p: [h.stand[0], g.y, h.stand[1]] }, hit, sim.lad.L)
+    if (q.ok && q.pose) { view.setDemo(q.pose, sim.lad.L); demoUntil = performance.now() + 5000 }
+  }
+  return true
+}
+function hints() {
+  const now = performance.now(), pl = sim.pl
+  if (!lastPos || Math.hypot(pl.p[0] - lastPos[0], pl.p[2] - lastPos[2]) > 0.3 || Math.abs(pl.p[1] - lastPos[1]) > 0.3 || pl.mode === 'ladder') { lastActive = now; lastPos = pl.p.slice() }
+  if (demoUntil && now > demoUntil) { view.setDemo(null); demoUntil = 0 }
+  // 掛けられる時に 6 秒動かなかったら、次の掛け場所がうっすら光る
+  if (canAim() && now - lastActive > 6000) {
+    const cur = course.flags[sim.flag].sec
+    const cand = course.hints.filter(h => h.sec >= cur && h.sec <= cur + 1 && h.p[1] >= pl.p[1] - 0.3).sort((a, b) => Math.hypot(a.p[0] - pl.p[0], a.p[2] - pl.p[2]) - Math.hypot(b.p[0] - pl.p[0], b.p[2] - pl.p[2]))[0]
+    if (cand && view.hint !== cand) view.setHint(cand)
+    hintUntil = now + 500
+  }
+  if (view.hint && now > hintUntil) view.setHint(null)
 }
 
 // ===== ループ（固定60Hz） =====
@@ -283,6 +320,7 @@ function frame() {
   if (!canAim() && touch) ghost = null
   view.render(acc / DT, dt, ghost)
   hud()
+  hints()
   sounds(dt)
   requestAnimationFrame(frame)
 }
@@ -294,7 +332,7 @@ function tick() {
   dbg.steps++
 }
 
-$('start').addEventListener('click', () => { if (S) S.init(); lockMouse(); $('title').hidden = true; $('hud').hidden = false; tutor(''); last = performance.now() })
+$('start').addEventListener('click', () => { if (S) S.init(); lockMouse(); $('title').hidden = true; $('hud').hidden = false; tutor(''); last = performance.now(); lastActive = performance.now() })
 $('muteBtn').addEventListener('click', () => { if (!S) return; S.setMute(!S.muted); $('muteBtn').textContent = S.muted ? '音 なし' : '音 あり' })
 $('again').addEventListener('click', () => { sim.reset(); $('goal').hidden = true })
 tutor('')

@@ -33,7 +33,7 @@ const res = await p.evaluate(() => {
   sl.view.camYaw = -Math.PI / 2 + 0.5; sl.view.camPitch = 0.3; sl.view.camT.set(8.2, 1.4, 17)
   sl.step(30)
   const box = s.world.boxes.find(b => b.sec === 1)
-  const pt = [box.min[0], box.max[1] - 0.1, 17]
+  const pt = [box.min[0], box.max[1] - 0.2, 17]
   const [x, y, vis] = sl.screenOf(pt)
   return { x, y, vis }
 })
