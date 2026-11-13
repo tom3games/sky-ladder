@@ -1,0 +1,26 @@
+- snd/step1.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/step2.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/step3.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/step4.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/rung1.mp3: 100 CC0 SFX #2 / rubberduck / CC0
+- snd/rung2.mp3: 100 CC0 SFX #2 / rubberduck / CC0
+- snd/rung3.mp3: 100 CC0 SFX #2 / rubberduck / CC0
+- snd/thud1.mp3: 75 CC0 breaking / falling / hit sfx / rubberduck / CC0
+- snd/thud2.mp3: 75 CC0 breaking / falling / hit sfx / rubberduck / CC0
+- snd/ladfall1.mp3: 75 CC0 breaking / falling / hit sfx / rubberduck / CC0
+- snd/ladfall2.mp3: 75 CC0 breaking / falling / hit sfx / rubberduck / CC0
+- snd/slip1.mp3: 100 CC0 SFX #2 / rubberduck / CC0
+- snd/slip2.mp3: 100 CC0 SFX #2 / rubberduck / CC0
+- snd/crumble1.mp3: 75 CC0 breaking / falling / hit sfx / rubberduck / CC0
+- snd/crumble2.mp3: 75 CC0 breaking / falling / hit sfx / rubberduck / CC0
+- snd/cloth1.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/cloth2.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/take1.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/creak1.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/creak2.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/wind.mp3: Wind / IgnasD / CC0
+- snd/crow.mp3: Crow / fvcalderan / CC0
+- snd/bell.mp3: Bell dings/chimes / PWL / CC0
+- assets/tex/（japanese_stone_wall・leaf_scattered_gravel・japanese_cedar_planks・white_plaster_rough_01・mossy_rock・dry_decay_leaves・grey_roof_tiles・japanese_zelkova_bark・weathered_planks の色・法線・ラフネス、512px webp）: Poly Haven / CC0 / https://polyhaven.com/textures
+- assets/models/climber.glb: Quaternius「Ultimate Modular Men」Adventurer（アニメを5本に減らした）/ CC0 / https://quaternius.com
+- assets/pano.webp: このゲームのために描いた背景（夕焼けの山並みと霞）

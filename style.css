@@ -1,0 +1,47 @@
+[hidden]{display:none!important}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#2a1c18;color:#f3e9dc;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:none}
+#view{position:fixed;inset:0}
+#view canvas{display:block;width:100%;height:100%}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;padding:24px max(24px,env(safe-area-inset-left));background:linear-gradient(90deg,rgba(28,16,12,.78),rgba(28,16,12,.2) 70%,transparent)}
+h1{font-size:clamp(40px,9vw,88px);letter-spacing:.12em;margin:0;font-weight:800}
+.sub{margin:6px 0 28px;font-size:18px;opacity:.85}
+.go{align-self:flex-start;font:inherit;font-size:22px;padding:12px 34px;background:#c8502a;color:#fff6ea;border:0;border-radius:3px;box-shadow:0 4px 0 #7a2c16;cursor:pointer}
+.keys{font-family:"Hiragino Sans",sans-serif;font-size:13px;opacity:.8;max-width:560px;line-height:1.8;margin:22px 0 0}
+.touch .keys.pc,body:not(.touch) .keys.sp{display:none}
+.link{font:inherit;font-family:"Hiragino Sans",sans-serif;font-size:13px;background:none;border:0;color:#f3e9dcaa;padding:6px 0;cursor:pointer;margin-top:12px}
+.proto{font-family:"Hiragino Sans",sans-serif;font-size:12px;opacity:.55;margin-top:14px}
+#hud{position:fixed;inset:0;pointer-events:none;font-family:"Hiragino Sans",sans-serif}
+.top{position:absolute;top:calc(14px + env(safe-area-inset-top));left:34px;display:flex;align-items:baseline;gap:4px;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;text-shadow:0 1px 4px #000b;color:#f6e7c8}
+.top b{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}
+.top small{font-size:14px;opacity:.8}
+#sec{font-size:14px;margin-left:12px;opacity:.85;letter-spacing:.06em}
+.gauge{position:absolute;left:calc(14px + env(safe-area-inset-left));top:calc(16px + env(safe-area-inset-top));height:34vh;width:12px}
+.gauge .rope{position:absolute;left:5px;top:0;bottom:0;width:2px;background:linear-gradient(#e8c87a,#7a5a36);opacity:.7}
+.gauge .me{position:absolute;left:0;width:12px;height:12px;margin-bottom:-6px;border-radius:50%;background:#ffd27a;box-shadow:0 0 6px #ffb040}
+.gauge .best{position:absolute;left:1px;width:10px;height:2px;background:#fff6}
+.flag{width:52px;height:52px;right:calc(29px + env(safe-area-inset-right));bottom:calc(108px + env(safe-area-inset-bottom));display:grid;place-items:center}
+body:not(.touch) .btn.flag{display:none}
+#toast{position:absolute;top:22%;left:50%;transform:translateX(-50%);font-size:20px;text-shadow:0 2px 6px #000c;opacity:0;transition:opacity .2s;white-space:nowrap}
+#toast.on{opacity:1}
+#tut{position:absolute;bottom:calc(178px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:17px;padding:8px 14px;background:#1c120ecc;border-left:3px solid #d8a640;white-space:nowrap}
+#ang{position:absolute;left:0;top:0;font-size:15px;padding:2px 7px;background:#1c120ebb;color:#bff0c4;border-radius:2px;white-space:nowrap}
+#ang.bad{color:#ffb4a4}
+.btn{position:absolute;pointer-events:auto;font:inherit;font-size:15px;color:#fff;background:#1c120ecc;border:1px solid #f3e9dc55;border-radius:50%;width:74px;height:74px}
+.jump{right:calc(18px + env(safe-area-inset-right));bottom:calc(22px + env(safe-area-inset-bottom))}
+.take{right:calc(104px + env(safe-area-inset-right));bottom:calc(30px + env(safe-area-inset-bottom));background:#7a3a1ecc}
+body:not(.touch) .btn.jump{display:none}
+body:not(.touch) .btn.take{width:auto;height:auto;border-radius:3px;padding:8px 14px;bottom:22px;right:22px}
+#joy{position:absolute;left:calc(22px + env(safe-area-inset-left));bottom:calc(22px + env(safe-area-inset-bottom));width:132px;height:132px;border-radius:50%;border:2px solid #f3e9dc66;background:#1c120e40;pointer-events:auto;touch-action:none}
+#joyK{position:absolute;left:44px;top:44px;width:44px;height:44px;border-radius:50%;background:#f3e9dccc;pointer-events:none}
+body:not(.touch) #joy{display:none}
+#cross{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 3px #000;display:none}
+.locked #cross{display:block}
+.len{width:58px;height:58px;font-size:13px;right:calc(22px + env(safe-area-inset-right))}
+.len.long{bottom:calc(240px + env(safe-area-inset-bottom))}
+.len.short{bottom:calc(172px + env(safe-area-inset-bottom))}
+body:not(.touch) .len{display:none}
+#goal{align-items:flex-start}
+#goal h2{font-size:48px;margin:0}
+#goalT{font-size:24px}
+#boot{position:fixed;left:8px;right:8px;bottom:8px;color:#f88;font:12px monospace;background:#000c;padding:8px}

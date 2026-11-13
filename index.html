@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>SKY LADDER｜はしご1本で城の天守を登る3D</title>
+<meta name="description" content="はしごを1本だけ持って、夕暮れの城の石垣と天守を登る3Dのブラウザゲーム。どこに・どの角度で掛けるかがすべて。急すぎると後ろへ倒れ、寝かせすぎると足元が滑る。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SKY LADDER">
+<meta property="og:description" content="はしご1本で城の天守を登る。急すぎると後ろへ倒れ、寝かせすぎると滑る。">
+<meta property="og:image" content="https://tom3games.github.io/sky-ladder/og.png?v=5">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://tom3games.github.io/sky-ladder/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#2a1c18">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=5">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
+<script>
+window.__jsUp=false
+window.addEventListener('error',function(e){window.__err=(e.message||'')+' '+(e.filename||'')+':'+(e.lineno||'')})
+setTimeout(function(){if(!window.__slReady){var d=document.getElementById('boot');if(d){d.hidden=false;d.textContent='起動できませんでした: '+(window.__err||'読み込み失敗')+' / '+navigator.userAgent}}},12000)
+</script>
+</head>
+<body>
+<div id="view"></div>
+<section id="title" class="screen">
+  <h1>SKY LADDER</h1>
+  <p class="sub">はしご一本で、天守の屋根まで</p>
+  <button id="start" class="go">登る</button>
+  <p class="keys pc">マウスで見回す　移動 WASD　真ん中の印に掛ける クリック　登る W 長押し　引き上げ E　跳ぶ Space　寄る・引く ホイール　旗へ R　マウスを離す Esc</p>
+  <p class="keys sp">左下のスティックで歩く・登る　なぞると見回す　2本指で寄る・引く　掛けたい所をタップ（長押しで影、動かすと角度が変わる）</p>
+  <p class="foot"><button id="muteBtn" class="link">音 あり</button></p>
+</section>
+<div id="hud" hidden>
+  <div class="gauge" aria-hidden="true"><i class="rope"></i><i id="gaugeBest" class="best"></i><i id="gaugeMe" class="me"></i></div>
+  <div class="top"><b id="alt">0</b><small>m</small><span id="sec"></span></div>
+  <span id="tm" hidden></span>
+  <button id="bFlag" class="btn flag" aria-label="旗へ戻る"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M6 3v18" stroke="#f3e9dc" stroke-width="2"/><path d="M7 4h11l-3 4 3 4H7z" fill="#d8b45a"/></svg></button>
+  <div id="toast"></div>
+  <div id="tut" hidden></div>
+  <div id="ang" hidden></div>
+  <button id="bTake" class="btn take" hidden>引き上げ</button>
+  <button id="bJump" class="btn jump">跳ぶ</button>
+  <div id="joy"><i id="joyK"></i></div>
+  <div id="cross"></div>
+  <button id="bLong" class="btn len long" hidden>伸ばす</button>
+  <button id="bShort" class="btn len short" hidden>縮める</button>
+</div>
+<section id="goal" class="screen" hidden>
+  <h2>頂上</h2>
+  <p id="goalT"></p>
+  <button id="again" class="go">もう一度</button>
+</section>
+<div id="boot" hidden></div>
+<script src="sfx.js?v=5"></script>
+<script type="module" src="js/game.js?v=5"></script>
+</body>
+</html>
